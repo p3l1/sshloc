@@ -1,14 +1,6 @@
 version: '3.7'
 
 services:
-
-  # The 'setup' service runs a one-off script which initializes the
-  # 'logstash_internal' and 'kibana_system' users inside Elasticsearch with the
-  # values of the passwords defined in the '.env' file.
-  #
-  # This task is only performed during the *initial* startup of the stack. On all
-  # subsequent runs, the service simply returns immediately, without performing
-  # any modification to existing users.
   setup:
     build:
       context: setup/
@@ -22,7 +14,8 @@ services:
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
     networks:
-      - elk
+      elk:
+        ipv4_address: 172.22.20.2
     depends_on:
       - elasticsearch
 
@@ -39,15 +32,11 @@ services:
       - "9300:9300"
     environment:
       ES_JAVA_OPTS: -Xms512m -Xmx512m
-      # Bootstrap password.
-      # Used to initialize the keystore during the initial startup of
-      # Elasticsearch. Ignored on subsequent runs.
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
-      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
-      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
     networks:
-      - elk
+      elk:
+        ipv4_address: 172.22.20.3
 
   logstash:
     build:
@@ -57,16 +46,16 @@ services:
     volumes:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+      - ./endlessh:/var/log/endlessh:ro
     ports:
-      - "5044:5044"
-      - "50000:50000/tcp"
-      - "50000:50000/udp"
+      - "514:514"
       - "9600:9600"
     environment:
       LS_JAVA_OPTS: -Xms256m -Xmx256m
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
     networks:
-      - elk
+      elk:
+        ipv4_address: 172.22.20.4
     depends_on:
       - elasticsearch
 
@@ -82,13 +71,33 @@ services:
     environment:
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
     networks:
-      - elk
+      elk:
+        ipv4_address: 172.22.20.5
     depends_on:
       - elasticsearch
 
+  endlessh:
+    image: lscr.io/linuxserver/endlessh:latest
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Berlin
+      MSDELAY: 10000
+      MAXLINES: 5
+      MAXCLIENTS: 4096
+      LOGFILE: "true"
+    ports:
+      - 0.0.0.0:2222:2222
+    volumes:
+      - ./endlessh:/config/logs/endlessh:rw
+    restart: unless-stopped
+    networks:
+      elk:
+        ipv4_address: 172.22.20.6
+
 networks:
   elk:
-    driver: bridge
+    external: true
 
 volumes:
   setup:
