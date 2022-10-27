@@ -5,7 +5,7 @@ This project is based on the [docker-elk](https://github.com/deviantony/docker-e
 ## Features
 
 The given [`docker-compose.yml`](docker-compose.yml) was extended to expose the [endlessh](https://github.com/skeeto/endlessh) service to provide an SSH honeypot on port 2222.
-Endlessh's log output is sent to logstash by using a shared Docker volume. The log is then transformed using [GROK](logstash/pipeline/logstash.conf) patterns and sent to elasticsearch.
+Endlessh's log output is sent to Logstash by using a shared Docker volume. The log is then transformed using [GROK](logstash/pipeline/logstash.conf) patterns and sent to Elasticsearch.
 
 ## Motivation
 

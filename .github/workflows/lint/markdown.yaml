@@ -32,7 +32,7 @@ MD012: true
 
 # Line length <https://github.com/DavidAnson/markdownlint/blob/master/doc/Rules.md#md013>
 MD013:
-  line_length: 120
+  line_length: 500
   code_blocks: false
 
 # Dollar signs used before commands without showing output <https://github.com/DavidAnson/markdownlint/blob/master/doc/Rules.md#md014>
